@@ -1,0 +1,10 @@
+Boomerang build system.
+
+We assume the method called "The faster, more involved, asynchronous way" to load boomerang (https://github.com/lognormal/boomerang/)
+It can be easily changed to build a regular boomerang.js build by removing async_loading.js from the plugin list.
+
+To build:
+- Edit async_loading.js to configure your beacon url (complete URL to the gif image)
+- type make
+
+The final boomerang file will be at ../assets/public_html/js.

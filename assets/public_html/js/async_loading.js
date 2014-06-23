@@ -1,0 +1,3 @@
+BOOMR.init({
+    config: parameters,
+});
