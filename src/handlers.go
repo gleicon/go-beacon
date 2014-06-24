@@ -29,15 +29,16 @@ func (s *httpServer) beaconHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Expires", "0")
 	w.Header().Set("X-TRACKER-ID", "0")
 	w.Header().Set("Content-Type", "image/gif")
-	// cookies + funnel ?
 	output, _ := base64.StdEncoding.DecodeString(base64GifPixel)
 	w.Write(output)
-	t, err := json.Marshal(r.URL.Query())
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(string(t))
+	go func() {
+		t, err := json.Marshal(r.URL.Query())
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(string(t))
+	}()
 }
 
 func (s *httpServer) echoBeaconHandler(w http.ResponseWriter, r *http.Request) {

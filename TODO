@@ -1,2 +1,3 @@
 - Use redis and http middleware to implement throttling
 - Plug mangos or nanomsg backend.
+- figure out funnels

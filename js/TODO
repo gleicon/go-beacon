@@ -1,0 +1,5 @@
+if cookie not set
+- create UUID
+- set cookie with expiration
+
+if cookie is set, read UUID. Reset expiration
