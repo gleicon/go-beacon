@@ -1,3 +1,4 @@
 *.swp
 .DS_Store
 go-beacon
+yuicompressor-2.4.8.jar
