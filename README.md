@@ -13,8 +13,8 @@ Look below for the boomerang build section for more information.
 
 ## Download and Build
 
-    $ git clone https://github.com/gleicon/go-build
-    $ cd go-build
+    $ git clone https://github.com/gleicon/go-beacon
+    $ cd go-beacon
     $ make
 
 ## Build SSL
