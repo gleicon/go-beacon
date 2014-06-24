@@ -1,0 +1,25 @@
+# Simple tracker based on Navigation Timing API
+
+A simple tracker that collects Navigation Timing API, timers and js exceptions. 
+It inserts a 1x1px image into the page and have to be loaded at the <head> section.
+All javascript events are stubbed (i.e. if you already have a function mapped to window.onload it will be called after the tracker.
+
+## Query string and parameters
+
+This js tracker returns a couple of events by query string
+    
+    u - on before unload metrics: beforeunloadtime, start, total_elapsed_time, type_navigate(RELOAD, BACK_FORWARD, NAVIGATE)
+    p - performance data: page_load_time, tcp_time, dns_time, processing_time, processing_time
+    e - errors: JSON containing: {"msg":error msg, "url": url, "line": line that the error ocurred}
+    g - geolocation info (if geo == true on activate()): JSON object containing 
+            {"lat": position.coords.latitude, "long": position.coords.longitude} (it will ask for user permission)
+    
+## Add to your page, at the <head> section
+
+    <script type="text/javascript" src="http://location.of.track.js/js/track.js"></script>
+    <script>
+        activate("http://location.of.your.beacon/t.gif", "tracker_name");
+    </script>
+
+
+

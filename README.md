@@ -36,6 +36,10 @@ The best way is to serve boomerang from a CDN, but in case you need a specific s
 Edit Makefile to pick a different minifier or configure the plugins that you want. 
 There's a plugin called async_loading.js that implements async loading as per boomerang request, but that can be removed in the Makefile.
 
+## Simpler tracker
+
+If you want a simple tracker or to hack your own tracker, I've provided an example at the js/ folder. Just type make.
+
 ## Install
 
 Edit the config file and run the server, check the beacon_uri parameter and execute the server:
@@ -50,7 +54,7 @@ Install, uninstall. Edit Makefile and set PREFIX to the target directory:
 
 Allow non-root process to listen on low ports:
 
-	/sbin/setcap 'cap_net_bind_service=+ep' /opt/go-beacon/server
+	/sbin/setcap 'cap_net_bind_service=+ep' /opt/go-beacon/go-beacon
 
 
 Gleicon 2014 - MIT License.
