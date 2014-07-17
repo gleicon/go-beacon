@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -31,7 +32,12 @@ func (s *httpServer) beaconHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/gif")
 	output, _ := base64.StdEncoding.DecodeString(base64GifPixel)
 	w.Write(output)
-	go send(r.URL.Query())
+	go func() {
+		fmt.Printf("antes")
+		err := producer.Send(r.URL.Query())
+		fmt.Printf("depois")
+		log.Println(err)
+	}()
 }
 
 func (s *httpServer) echoBeaconHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +47,7 @@ func (s *httpServer) echoBeaconHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-TRACKER-ID", "0")
 	t, err := json.Marshal(r.URL.Query())
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	w.Write(t)

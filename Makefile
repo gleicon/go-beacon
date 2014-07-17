@@ -4,19 +4,27 @@
 
 TARGET=$(DESTDIR)/opt/go-beacon
 include src/Makefile.defs
+include backend/Makefile.defs
 
-all: server
+all: server consumer
 
 deps:
 	make -C src deps
+	make -C backend deps
 
 server:
 	make -C src
 	@cp src/$(NAME) .
 
+consumer:
+	make -C backend
+	@cp backend/$(CONSUMER_NAME) .
+
 clean:
 	make -C src clean
+	make -C backend clean
 	@rm -f $(NAME)
+	@rm -f $(CONSUMER_NAME)
 
 install: server
 	install -m 750 -d $(TARGET)

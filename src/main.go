@@ -26,6 +26,9 @@ var (
 	// Templates
 	HTML *html.Template
 	TEXT *text.Template
+
+	// Producer
+	producer *Producer
 )
 
 func main() {
@@ -64,6 +67,8 @@ func main() {
 		cpuinfo = "1 CPU"
 	}
 	log.Printf("%s %s (%s)", APPNAME, VERSION, cpuinfo)
+	// Start producer
+	producer = newProducer(config.Backend.BackendUrl, config.Backend.FlushInterval)
 
 	// Start HTTP server.
 	s := new(httpServer)

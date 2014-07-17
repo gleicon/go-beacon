@@ -6,87 +6,103 @@ import (
 	"container/list"
 	"errors"
 	"github.com/ugorji/go/codec"
+	"log"
 	"net/url"
 	"time"
 )
 
-// TODO: fetch url from configuration file
 // TODO: implement buffer size counter
-// TODO: push flush time to config
-// TODO: move it to struct
+// TODO: implement retry counter
 // TODO: look into creating a conn pool
 
-var (
+type Producer struct {
 	mh            codec.MsgpackHandle
 	buffer        *list.List
 	backendUrl    string
 	flushInterval int
-)
-
-func initProducer(u string, flushInt int) {
-	buffer = list.New()
-	backendUrl = u
-	flushInterval = flushInt
-	go func() {
-		time.Sleep(time.Duration(flushInterval) * time.Second)
-		flushBuffer()
-	}()
 }
 
-func flushBuffer() {
-	for i := buffer.Front(); i != nil; i = i.Next() {
+func newProducer(u string, flushInt int) *Producer {
+	producer := new(Producer)
+	producer.buffer = list.New()
+	producer.backendUrl = u
+	producer.flushInterval = flushInt
+	go func() {
+		log.Println("Buffer flush started")
+		for {
+			time.Sleep(time.Duration(producer.flushInterval) * time.Second)
+			producer.flushBuffer()
+			log.Println("Buffer flushed ")
+		}
+	}()
+	return producer
+}
+
+func (p *Producer) flushBuffer() {
+	for i := p.buffer.Front(); i != nil; i = i.Next() {
 		wat := i.Value.([]byte)
-		err := sendMessage(&wat)
+		err := p.sendMessage(&wat)
 		if err != nil {
-			// TODO: retry counter
-			buffer.PushBack(wat)
+			p.buffer.PushBack(wat)
 		}
 	}
 }
 
-func sendMessage(message *[]byte) error {
+func (p *Producer) sendMessage(message *[]byte) error {
 	requestSocket, err := req.NewSocket()
+	log.Println("0")
 	if err != nil {
 		return err
 	}
 	defer requestSocket.Close()
 	all.AddTransports(requestSocket)
-	if err = requestSocket.Dial(backendUrl); err != nil {
+	log.Println("1")
+
+	if err = requestSocket.Dial(p.backendUrl); err != nil {
+		log.Println(err)
 		return err
 	}
+	log.Println("2")
 
 	if err = requestSocket.Send(*message); err != nil {
+		log.Println(err)
 		return err
 	}
+	log.Println("3")
 
 	var clientMsg []byte
 
 	if clientMsg, err = requestSocket.Recv(); err != nil {
+		log.Println(err)
 		return err
 	}
+	log.Println("4")
 
 	if string(clientMsg) != "OK" {
 		return errors.New("Response not OK, requeued")
 	}
+	log.Println(clientMsg)
+
+	log.Println("5")
 
 	return nil
 }
 
-func send(query url.Values) error {
-	err, b := encode(query)
+func (p *Producer) Send(query url.Values) error {
+	err, b := p.encode(query)
 	if err != nil {
 		return err
 	}
-	err = sendMessage(&b)
+	err = p.sendMessage(&b)
 	if err != nil {
-		buffer.PushBack(b)
+		p.buffer.PushBack(b)
 	}
 	return nil
 }
 
-func encode(query url.Values) (error, []byte) {
+func (p *Producer) encode(query url.Values) (error, []byte) {
 	var b []byte
-	enc := codec.NewEncoderBytes(&b, &mh)
+	enc := codec.NewEncoderBytes(&b, &p.mh)
 	err := enc.Encode(query)
 	if err != nil {
 		return err, nil

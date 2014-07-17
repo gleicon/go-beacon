@@ -16,11 +16,6 @@ type configFile struct {
 	DocumentRoot string `toml:"document_root"`
 	BeaconURI    string `toml:"beacon_uri"`
 
-	Backend struct {
-		BackendUrl    string `toml: "backend_url"`
-		FlushInterval int    `toml: "flush_interval"`
-	} `toml: "backend"`
-
 	DB struct {
 		Redis string `toml:"redis"`
 	} `toml:"db"`
@@ -35,6 +30,11 @@ type configFile struct {
 		CertFile string `toml:"cert_file"`
 		KeyFile  string `toml:"key_file"`
 	} `toml:"https_server"`
+
+	Backend struct {
+		BackendUrl    string `toml:"backend_url"`
+		FlushInterval int    `toml:"flush_interval"`
+	} `toml:"backend"`
 }
 
 // LoadConfig reads and parses the configuration file.
