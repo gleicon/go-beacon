@@ -16,8 +16,12 @@ type configFile struct {
 	DocumentRoot string `toml:"document_root"`
 	BeaconURI    string `toml:"beacon_uri"`
 
+	Backend struct {
+		BackendUrl    string `toml: "backend_url"`
+		FlushInterval int    `toml: "flush_interval"`
+	} `toml: "backend"`
+
 	DB struct {
-		MySQL string `toml:"mysql"`
 		Redis string `toml:"redis"`
 	} `toml:"db"`
 
