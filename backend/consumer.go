@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/gdamore/mangos/transport/all"
 	"fmt"
 	"github.com/ugorji/go/codec"
+	"reflect"
 	"time"
 )
 
@@ -14,9 +15,9 @@ var (
 	b  []byte
 )
 
-func decode(buf []byte) (error, interface{}) {
+func decode(buf []byte) (error, map[string][]string) {
 
-	doc := map[string]interface{}(nil)
+	doc := map[string][]string(nil)
 	dec := codec.NewDecoderBytes(buf, &mh)
 	err := dec.Decode(&doc)
 
@@ -51,6 +52,7 @@ func main() {
 		}
 
 		close(responseServerReady)
+		mh.MapType = reflect.TypeOf(map[string][]string(nil))
 
 		for {
 			if serverMsg, err = responseServer.RecvMsg(); err != nil {
@@ -58,7 +60,11 @@ func main() {
 			}
 
 			err, d := decode(serverMsg.Body)
-			fmt.Println("serverMsg: ", d)
+			fmt.Println("------ server msg ------ ")
+			for k, v := range d {
+				fmt.Println(k, v)
+			}
+			fmt.Println("------ server msg ------ ")
 
 			serverMsg.Body = []byte("OK")
 
