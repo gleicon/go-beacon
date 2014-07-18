@@ -11,7 +11,7 @@ unzip:
 
 build:
 	cp async_loading.js boomerang-master
-	(cd boomerang-master && make PLUGINS="plugins/rt.js plugins/bw.js plugins/dns.js plugins/navtiming.js plugins/restiming.js async_loading.js" MINIFIER="java -jar ../yuicompressor-2.4.8.jar --type js")
+	(cd boomerang-master && make PLUGINS="plugins/rt.js plugins/bw.js plugins/dns.js plugins/navtiming.js async_loading.js" MINIFIER="java -jar ../yuicompressor-2.4.8.jar --type js")
 
 install:
 	cp `(ls -Art boomerang-master/boomerang-*.js | grep -v debug | tail -n 1)` $(ASSETS)
