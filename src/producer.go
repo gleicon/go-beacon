@@ -50,25 +50,21 @@ func (p *Producer) flushBuffer() {
 
 func (p *Producer) sendMessage(message *[]byte) error {
 	requestSocket, err := req.NewSocket()
-	log.Println("0")
 	if err != nil {
 		return err
 	}
 	defer requestSocket.Close()
 	all.AddTransports(requestSocket)
-	log.Println("1")
 
 	if err = requestSocket.Dial(p.backendUrl); err != nil {
 		log.Println(err)
 		return err
 	}
-	log.Println("2")
 
 	if err = requestSocket.Send(*message); err != nil {
 		log.Println(err)
 		return err
 	}
-	log.Println("3")
 
 	var clientMsg []byte
 
@@ -76,14 +72,10 @@ func (p *Producer) sendMessage(message *[]byte) error {
 		log.Println(err)
 		return err
 	}
-	log.Println("4")
 
 	if string(clientMsg) != "OK" {
 		return errors.New("Response not OK, requeued")
 	}
-	log.Println(clientMsg)
-
-	log.Println("5")
 
 	return nil
 }

@@ -13,6 +13,6 @@ server:
 	go build -v -o $(CONSUMER_NAME) -ldflags "-X main.VERSION $(VERSION)"
 
 clean:
-	rm -f $(NAME)
+	rm -f $(CONSUMER_NAME)
 
 .PHONY: server

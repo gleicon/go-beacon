@@ -33,10 +33,10 @@ func (s *httpServer) beaconHandler(w http.ResponseWriter, r *http.Request) {
 	output, _ := base64.StdEncoding.DecodeString(base64GifPixel)
 	w.Write(output)
 	go func() {
-		fmt.Printf("antes")
 		err := producer.Send(r.URL.Query())
-		fmt.Printf("depois")
-		log.Println(err)
+		if err != nil {
+			log.Println(err)
+		}
 	}()
 }
 
