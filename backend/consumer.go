@@ -26,6 +26,11 @@ func decode(buf []byte) (error, map[string][]string) {
 	}
 	return nil, doc
 }
+func string2int(in map[string][]string) (error, map[string]int) {
+	out := make(map[string]int)
+
+	return nil, out
+}
 
 func main() {
 	url := "tcp://127.0.0.1:8000"
