@@ -15,6 +15,10 @@ var (
 	b  []byte
 )
 
+func boomerangMetrics(map[string][]string) {}
+
+func jsMetrics(map[string]string) {}
+
 func decode(buf []byte) (error, map[string][]string) {
 
 	doc := map[string][]string(nil)
@@ -33,6 +37,8 @@ func string2int(in map[string][]string) (error, map[string]int) {
 }
 
 func main() {
+	// consumer --type boomerang --remote tcp://127.0.0.1:8000 --statsd 192.168.33.20:8125
+
 	url := "tcp://127.0.0.1:8000"
 
 	responseServerReady := make(chan struct{})
