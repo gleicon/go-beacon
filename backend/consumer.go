@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/ugorji/go/codec"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -18,6 +19,18 @@ var (
 func boomerangMetrics(map[string][]string) {}
 
 func jsMetrics(map[string]string) {}
+
+func delta(start string, end string) (error, int) {
+	s, err := strconv.Atoi(start)
+	if err != nil {
+		return err, -1
+	}
+	e, err := strconv.Atoi(end)
+	if err != nil {
+		return err, -1
+	}
+	return nil, e - s
+}
 
 func decode(buf []byte) (error, map[string][]string) {
 
@@ -32,7 +45,6 @@ func decode(buf []byte) (error, map[string][]string) {
 }
 func string2int(in map[string][]string) (error, map[string]int) {
 	out := make(map[string]int)
-
 	return nil, out
 }
 
@@ -72,9 +84,17 @@ func main() {
 
 			err, d := decode(serverMsg.Body)
 			fmt.Println("------ server msg ------ ")
-			for k, v := range d {
-				fmt.Println(k, v)
-			}
+			nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])
+			nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])
+			nt_domcontloaded, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcontloaded_end"][0])
+			//			roundtrip, _ := delta(d["rt_start"][0], d["rt_end"][0])
+			fmt.Println("Navigation timing DNS: ", nt_dns)
+			fmt.Println("Navigation timing Connection: ", nt_con)
+			fmt.Println("Navigation timing DOM content loaded: ", nt_domcontloaded)
+			//			fmt.Println("Roundtrip: ", roundtrip)
+			//			for k, v := range d {
+			//				fmt.Println(k, v)
+			//			}
 			fmt.Println("------ server msg ------ ")
 
 			serverMsg.Body = []byte("OK")
