@@ -20,16 +20,16 @@ func boomerangMetrics(map[string][]string) {}
 
 func jsMetrics(map[string]string) {}
 
-func delta(start string, end string) (error, int) {
+func delta(start string, end string) (int, error) {
 	s, err := strconv.Atoi(start)
 	if err != nil {
-		return err, -1
+		return -1, err
 	}
 	e, err := strconv.Atoi(end)
 	if err != nil {
-		return err, -1
+		return -1, err
 	}
-	return nil, e - s
+	return e - s, nil
 }
 
 func decode(buf []byte) (error, map[string][]string) {
@@ -42,10 +42,6 @@ func decode(buf []byte) (error, map[string][]string) {
 		return err, nil
 	}
 	return nil, doc
-}
-func string2int(in map[string][]string) (error, map[string]int) {
-	out := make(map[string]int)
-	return nil, out
 }
 
 func main() {
@@ -84,13 +80,21 @@ func main() {
 
 			err, d := decode(serverMsg.Body)
 			fmt.Println("------ server msg ------ ")
-			nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])
-			nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])
-			nt_domcontloaded, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcontloaded_end"][0])
-			//			roundtrip, _ := delta(d["rt_start"][0], d["rt_end"][0])
+			nt_dns, _ := delta(d["nt_dns_end"][0], d["nt_dns_st"][0])                               // domainLookupEnd - domainLookupStart
+			nt_con, _ := delta(d["nt_con_end"][0], d["nt_con_st"][0])                               // connectEnd - connectStart
+			nt_domcontloaded, _ := delta(d["nt_domcontloaded_end"][0], d["nt_domcontloaded_st"][0]) // domContentLoadedEnd - domContentLoadedStart
+			nt_processed, _ := delta(d["nt_domcomp"][0], d["nt_domcontloaded_st"][0])               // domComplete - domContentLoadedStart
+			nt_request, _ := delta(d["nt_res_st"][0], d["nt_req_st"][0])                            // ResponseStart - RequestStart
+			nt_response, _ := delta(d["nt_res_end"][0], d["nt_res_st"][0])                          // ResponseEnd - ResponseStart
+
+			// roundtrip, _ := delta(d["rt_start"][0], d["rt_end"][0])
+
 			fmt.Println("Navigation timing DNS: ", nt_dns)
 			fmt.Println("Navigation timing Connection: ", nt_con)
 			fmt.Println("Navigation timing DOM content loaded: ", nt_domcontloaded)
+			fmt.Println("Navigation timing DOM processing: ", nt_processed)
+			fmt.Println("Navigation timing Request: ", nt_request)
+			fmt.Println("Navigation timing Response: ", nt_response)
 			//			fmt.Println("Roundtrip: ", roundtrip)
 			//			for k, v := range d {
 			//				fmt.Println(k, v)
