@@ -32,12 +32,14 @@ func (s *httpServer) beaconHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/gif")
 	output, _ := base64.StdEncoding.DecodeString(base64GifPixel)
 	w.Write(output)
-	go func() {
-		err := producer.Send(r.URL.Query())
-		if err != nil {
-			log.Println(err)
-		}
-	}()
+	if len(r.URL.Query()) > 0 {
+		go func() {
+			err := producer.Send(r.URL.Query())
+			if err != nil {
+				log.Println(err)
+			}
+		}()
+	}
 }
 
 func (s *httpServer) echoBeaconHandler(w http.ResponseWriter, r *http.Request) {

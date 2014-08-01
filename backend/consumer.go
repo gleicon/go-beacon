@@ -17,9 +17,58 @@ var (
 	b  []byte
 )
 
-func boomerangMetrics(map[string][]string) {}
+func boomerangMetrics(d map[string][]string) {
+	fmt.Println("------ server msg ------ ")
+	nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
+	nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
+	nt_domcontloaded, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcontloaded_end"][0]) // domContentLoadedEnd - domContentLoadedStart
+	nt_processed, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcomp"][0])               // domComplete - domContentLoadedStart
+	nt_request, _ := delta(d["nt_req_st"][0], d["nt_res_st"][0])                            // ResponseStart - RequestStart
+	nt_response, _ := delta(d["nt_res_st"][0], d["nt_res_end"][0])                          // ResponseEnd - ResponseStart
+	nt_navtype := d["nt_nav_type"][0]
+	roundtrip, _ := delta(d["rt.bstart"][0], d["rt.end"][0])
+	page := d["r"][0]
+	url := d["u"][0]
 
-func jsMetrics(map[string]string) {}
+	fmt.Println("Navigation type: ", nt_navtype)
+	fmt.Println("Navigation timing DNS: ", nt_dns)
+	fmt.Println("Navigation timing Connection: ", nt_con)
+	fmt.Println("Navigation timing DOM content loaded: ", nt_domcontloaded)
+	fmt.Println("Navigation timing DOM processing: ", nt_processed)
+	fmt.Println("Navigation timing Request: ", nt_request)
+	fmt.Println("Navigation timing Response: ", nt_response)
+	fmt.Println("Roundtrip: ", roundtrip)
+	fmt.Println("Page: ", page)
+	fmt.Println("URL: ", url)
+	fmt.Println("------ server msg ------ ")
+}
+
+func jsMetrics(d map[string][]string) {
+	fmt.Println("------ server msg ------ ")
+	nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
+	nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
+	nt_domcontloaded, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcontloaded_end"][0]) // domContentLoadedEnd - domContentLoadedStart
+	nt_processed, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcomp"][0])               // domComplete - domContentLoadedStart
+	nt_request, _ := delta(d["nt_req_st"][0], d["nt_res_st"][0])                            // ResponseStart - RequestStart
+	nt_response, _ := delta(d["nt_res_st"][0], d["nt_res_end"][0])                          // ResponseEnd - ResponseStart
+	nt_navtype := d["nt_nav_type"][0]
+	roundtrip, _ := delta(d["rt.bstart"][0], d["rt.end"][0])
+	page := d["r"][0]
+	url := d["u"][0]
+
+	fmt.Println("Navigation type: ", nt_navtype)
+	fmt.Println("Navigation timing DNS: ", nt_dns)
+	fmt.Println("Navigation timing Connection: ", nt_con)
+	fmt.Println("Navigation timing DOM content loaded: ", nt_domcontloaded)
+	fmt.Println("Navigation timing DOM processing: ", nt_processed)
+	fmt.Println("Navigation timing Request: ", nt_request)
+	fmt.Println("Navigation timing Response: ", nt_response)
+	fmt.Println("Roundtrip: ", roundtrip)
+	fmt.Println("Page: ", page)
+	fmt.Println("URL: ", url)
+	fmt.Println("------ server msg ------ ")
+
+}
 
 // Calculate delta between start and end
 func delta(start string, end string) (int, error) {
@@ -47,7 +96,7 @@ func decode(buf []byte) (error, map[string][]string) {
 }
 
 func main() {
-	// consumer --type boomerang --remote tcp://127.0.0.1:8000 --statsd 192.168.33.20:8125
+	// consumer -type boomerang -listen tcp://127.0.0.1:8000 -statsd 192.168.33.20:8125
 	var (
 		listenAddr   string
 		statsdServer string
@@ -88,40 +137,19 @@ func main() {
 			if serverMsg, err = responseServer.RecvMsg(); err != nil {
 				fmt.Printf("\nServer receive failed: %v", err)
 			}
-
 			err, d := decode(serverMsg.Body)
-
-			fmt.Println("------ server msg ------ ")
-			nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
-			nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
-			nt_domcontloaded, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcontloaded_end"][0]) // domContentLoadedEnd - domContentLoadedStart
-			nt_processed, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcomp"][0])               // domComplete - domContentLoadedStart
-			nt_request, _ := delta(d["nt_req_st"][0], d["nt_res_st"][0])                            // ResponseStart - RequestStart
-			nt_response, _ := delta(d["nt_res_st"][0], d["nt_res_end"][0])                          // ResponseEnd - ResponseStart
-			nt_navtype := d["nt_nav_type"][0]
-			roundtrip, _ := delta(d["rt.bstart"][0], d["rt.end"][0])
-			page := d["r"][0]
-			url := d["u"][0]
-			//referer := d["r2"][0]
-
-			fmt.Println("Navigation type: ", nt_navtype)
-			fmt.Println("Navigation timing DNS: ", nt_dns)
-			fmt.Println("Navigation timing Connection: ", nt_con)
-			fmt.Println("Navigation timing DOM content loaded: ", nt_domcontloaded)
-			fmt.Println("Navigation timing DOM processing: ", nt_processed)
-			fmt.Println("Navigation timing Request: ", nt_request)
-			fmt.Println("Navigation timing Response: ", nt_response)
-			fmt.Println("Roundtrip: ", roundtrip)
-			fmt.Println("Page: ", page)
-			fmt.Println("URL: ", url)
-			//fmt.Println("Referer: ", referer)
-			//			for k, v := range d {
-			//				fmt.Println(k, v)
-			//			}
-			fmt.Println("------ server msg ------ ")
+			if len(d) < 1 {
+				fmt.Println("Discarded message")
+				continue
+			}
+			switch trackerType {
+			case "boomerang":
+				boomerangMetrics(d)
+			case "js":
+				jsMetrics(d)
+			}
 
 			serverMsg.Body = []byte("OK")
-
 			if err = responseServer.SendMsg(serverMsg); err != nil {
 				fmt.Printf("\nServer send failed: %v", err)
 				return
