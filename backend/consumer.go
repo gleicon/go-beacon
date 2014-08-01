@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/gdamore/mangos"
 	"bitbucket.org/gdamore/mangos/protocol/rep"
 	"bitbucket.org/gdamore/mangos/transport/all"
+	"flag"
 	"fmt"
 	"github.com/ugorji/go/codec"
 	"reflect"
@@ -47,8 +48,15 @@ func decode(buf []byte) (error, map[string][]string) {
 
 func main() {
 	// consumer --type boomerang --remote tcp://127.0.0.1:8000 --statsd 192.168.33.20:8125
+	var (
+		listenAddr   string
+		statsdServer string
+		trackerType  string
+	)
 
-	url := "tcp://127.0.0.1:8000"
+	flag.StringVar(&listenAddr, "listen", "tcp://127.0.0.1:8000", "Listening string - default: tcp://127.0.0.1:8000")
+	flag.StringVar(&statsdServer, "statsd", "127.0.0.1:8125", "statsd endpoint - default: 127.0.0.1:8125")
+	flag.StringVar(&trackerType, "tracker", "boomerang", "tracker type - default: boomerang [boomerang, js]")
 
 	responseServerReady := make(chan struct{})
 	responseServer, err := rep.NewSocket()
@@ -59,14 +67,16 @@ func main() {
 		fmt.Println("Error connecting: ", err)
 		return
 	}
-
+	fmt.Println("Listening:", listenAddr)
+	fmt.Println("Statsd endpoint:", statsdServer)
+	fmt.Println("Tracker type: ", trackerType)
 	fmt.Println("Consumer ready")
 
 	go func() {
 		var err error
 		var serverMsg *mangos.Message
 
-		if err = responseServer.Listen(url); err != nil {
+		if err = responseServer.Listen(listenAddr); err != nil {
 			fmt.Printf("\nServer listen failed: %v", err)
 			return
 		}
