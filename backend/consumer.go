@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ugorji/go/codec"
+	"net"
 	"reflect"
 	"strconv"
 	"time"
@@ -17,7 +18,7 @@ var (
 	b  []byte
 )
 
-func boomerangMetrics(d map[string][]string) {
+func boomerangMetrics(udpAddr *net.UDPAddr, d map[string][]string) {
 	fmt.Println("------ server msg ------ ")
 	nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
 	nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
@@ -43,7 +44,7 @@ func boomerangMetrics(d map[string][]string) {
 	fmt.Println("------ server msg ------ ")
 }
 
-func jsMetrics(d map[string][]string) {
+func jsMetrics(udpAddr *net.UDPAddr, d map[string][]string) {
 	fmt.Println("------ server msg ------ ")
 	nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
 	nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
@@ -120,6 +121,12 @@ func main() {
 	fmt.Println("Statsd endpoint:", statsdServer)
 	fmt.Println("Tracker type: ", trackerType)
 	fmt.Println("Consumer ready")
+	udpAddr, err := net.ResolveUDPAddr("udp4", statsdServer)
+
+	if err != nil {
+		fmt.Println("Error resolving statsd server", err)
+		return
+	}
 
 	go func() {
 		var err error
@@ -144,9 +151,9 @@ func main() {
 			}
 			switch trackerType {
 			case "boomerang":
-				boomerangMetrics(d)
+				boomerangMetrics(udpAddr, d)
 			case "js":
-				jsMetrics(d)
+				jsMetrics(udpAddr, d)
 			}
 
 			serverMsg.Body = []byte("OK")
