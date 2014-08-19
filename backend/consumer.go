@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"github.com/ugorji/go/codec"
 	"net"
+	"net/url"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,7 +20,7 @@ var (
 	b  []byte
 )
 
-func boomerangMetrics(udpAddr *net.UDPAddr, d map[string][]string) {
+func boomerangMetrics(udpAddr *net.UDPAddr, prefix string, d map[string][]string) {
 	fmt.Println("------ server msg ------ ")
 	nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
 	nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
@@ -29,22 +31,30 @@ func boomerangMetrics(udpAddr *net.UDPAddr, d map[string][]string) {
 	nt_navtype := d["nt_nav_type"][0]
 	roundtrip, _ := delta(d["rt.bstart"][0], d["rt.end"][0])
 	page := d["r"][0]
-	url := d["u"][0]
+	url, err := url.Parse(d["u"][0])
+	if err != nil {
+		fmt.Println("Error parsing URL", err)
+		return
+	}
+	if prefix != "" {
+		prefix = prefix + "."
+	}
+	partial := fmt.Sprintf("%s%s%s", prefix, strings.Replace(url.Host, "/", ".", -1), strings.Replace(url.Path, "/", ".", -1))
+	partial = strings.TrimSuffix(partial, ".")
 
-	fmt.Println("Navigation type: ", nt_navtype)
-	fmt.Println("Navigation timing DNS: ", nt_dns)
-	fmt.Println("Navigation timing Connection: ", nt_con)
-	fmt.Println("Navigation timing DOM content loaded: ", nt_domcontloaded)
-	fmt.Println("Navigation timing DOM processing: ", nt_processed)
-	fmt.Println("Navigation timing Request: ", nt_request)
-	fmt.Println("Navigation timing Response: ", nt_response)
-	fmt.Println("Roundtrip: ", roundtrip)
-	fmt.Println("Page: ", page)
-	fmt.Println("URL: ", url)
+	fmt.Printf("%s.navigation.type: %s\n", partial, nt_navtype)
+	fmt.Printf("%s.navigation.timing.dns: %d\n", partial, nt_dns)
+	fmt.Printf("%s.navigation.timing.connection: %d\n", partial, nt_con)
+	fmt.Printf("%s.navigation.timing.dom.loaded: %d\n", partial, nt_domcontloaded)
+	fmt.Printf("%s.navigation.timing.dom.processing: %d\n", partial, nt_processed)
+	fmt.Printf("%s.navigation.timing.request: %d\n", partial, nt_request)
+	fmt.Printf("%s.navigation.timing.response: %d\n", partial, nt_response)
+	fmt.Printf("%s.roundtrip: %d\n", partial, roundtrip)
+	fmt.Printf("%s.page: %s\n", partial, page)
 	fmt.Println("------ server msg ------ ")
 }
 
-func jsMetrics(udpAddr *net.UDPAddr, d map[string][]string) {
+func jsMetrics(udpAddr *net.UDPAddr, prefix string, d map[string][]string) {
 	fmt.Println("------ server msg ------ ")
 	nt_dns, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
 	nt_con, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
@@ -98,15 +108,12 @@ func decode(buf []byte) (error, map[string][]string) {
 
 func main() {
 	// consumer -type boomerang -listen tcp://127.0.0.1:8000 -statsd 192.168.33.20:8125
-	var (
-		listenAddr   string
-		statsdServer string
-		trackerType  string
-	)
 
-	flag.StringVar(&listenAddr, "listen", "tcp://127.0.0.1:8000", "Listening string - default: tcp://127.0.0.1:8000")
-	flag.StringVar(&statsdServer, "statsd", "127.0.0.1:8125", "statsd endpoint - default: 127.0.0.1:8125")
-	flag.StringVar(&trackerType, "tracker", "boomerang", "tracker type - default: boomerang [boomerang, js]")
+	listenAddr := flag.String("listen", "tcp://127.0.0.1:8000", "Listening string - default: tcp://127.0.0.1:8000")
+	statsdServer := flag.String("statsd", "127.0.0.1:8125", "statsd endpoint - default: 127.0.0.1:8125")
+	trackerType := flag.String("tracker", "boomerang", "tracker type - default: boomerang [boomerang, js]")
+	prefix := flag.String("prefix", "", "prefix to metrics - default: empty string")
+	flag.Parse()
 
 	responseServerReady := make(chan struct{})
 	responseServer, err := rep.NewSocket()
@@ -117,11 +124,12 @@ func main() {
 		fmt.Println("Error connecting: ", err)
 		return
 	}
-	fmt.Println("Listening:", listenAddr)
-	fmt.Println("Statsd endpoint:", statsdServer)
-	fmt.Println("Tracker type: ", trackerType)
+	fmt.Println("Listening:", *listenAddr)
+	fmt.Println("Statsd endpoint:", *statsdServer)
+	fmt.Println("Tracker type: ", *trackerType)
+	fmt.Println("Prefix: ", *prefix)
 	fmt.Println("Consumer ready")
-	udpAddr, err := net.ResolveUDPAddr("udp4", statsdServer)
+	udpAddr, err := net.ResolveUDPAddr("udp4", *statsdServer)
 
 	if err != nil {
 		fmt.Println("Error resolving statsd server", err)
@@ -132,7 +140,7 @@ func main() {
 		var err error
 		var serverMsg *mangos.Message
 
-		if err = responseServer.Listen(listenAddr); err != nil {
+		if err = responseServer.Listen(*listenAddr); err != nil {
 			fmt.Printf("\nServer listen failed: %v", err)
 			return
 		}
@@ -149,11 +157,11 @@ func main() {
 				fmt.Println("Discarded message")
 				continue
 			}
-			switch trackerType {
+			switch *trackerType {
 			case "boomerang":
-				boomerangMetrics(udpAddr, d)
+				boomerangMetrics(udpAddr, *prefix, d)
 			case "js":
-				jsMetrics(udpAddr, d)
+				jsMetrics(udpAddr, *prefix, d)
 			}
 
 			serverMsg.Body = []byte("OK")
