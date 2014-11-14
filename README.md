@@ -7,7 +7,10 @@ but can be used by any other javascript tracker. It answers to a request to an U
 
 This webserver is build on golang http library. I've decided to serve requests straight from Go based on past experiences on scalability.
 By using a regular nginx in front of it I'd basically just add another layer to a core that already can use all server cores plus Go's concurrency model.
-Besides the frontend serving a hardcoded 1x1 gif, the backend is connected through mangos, a native nanomsg implementation, using REQuest/REPly mode. That means that for a single front end you can connect multiple backend or change them on the fly without stopping your process. That also means that any language that understands nanomsg and msgpack (the serialization protocol) can be used to process the requests. Besides REQREP any other topology can be used with little code changes to implement stateless architectures.
+The frontend serves a hardcoded 1x1 gif and is connected through mangos, a native nanomsg implementation, using REQuest/REPly mode. The data sent is serialized using msgpack. 
+
+That means that for a single front end you can connect multiple backend or change them on the fly without stopping your process. That also means that any language that understands nanomsg and msgpack (the serialization protocol) can be used to process the requests. Besides REQREP any other topology can be used with little code changes to implement stateless architectures.
+
 Bundled are (or will be) a statsd and a filesystem logger backend.
 The default behaviour is to log a JSON of the query string to a file, but it can be plugged into any backend.
 
