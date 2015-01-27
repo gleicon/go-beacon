@@ -15,17 +15,25 @@ import (
 // TODO: implement retry counter
 // TODO: look into creating a conn pool
 
+/*
+
+A Producer is the basic msgpack + mangos + backend info
+It created at start time and takes care of:
+	- connecting to the given backend
+	- watchdog goroutine to catch unsent messages
+	- flushing unsent messages
+*/
 type Producer struct {
 	mh            codec.MsgpackHandle
 	buffer        *list.List
-	backendUrl    string
+	backendURL    string
 	flushInterval int
 }
 
 func newProducer(u string, flushInt int) *Producer {
 	producer := new(Producer)
 	producer.buffer = list.New()
-	producer.backendUrl = u
+	producer.backendURL = u
 	producer.flushInterval = flushInt
 	go func() {
 		log.Println("Buffer flush started")
@@ -56,7 +64,7 @@ func (p *Producer) sendMessage(message *[]byte) error {
 	defer requestSocket.Close()
 	all.AddTransports(requestSocket)
 
-	if err = requestSocket.Dial(p.backendUrl); err != nil {
+	if err = requestSocket.Dial(p.backendURL); err != nil {
 		log.Println(err)
 		return err
 	}
@@ -80,24 +88,29 @@ func (p *Producer) sendMessage(message *[]byte) error {
 	return nil
 }
 
+/*
+Send an encoded metric to the backend. In case of any error,
+the message is pushed back so the watchdog goroutine can retry it.
+*/
 func (p *Producer) Send(query url.Values) error {
-	err, b := p.encode(query)
+	b, err := p.encode(query)
 	if err != nil {
 		return err
 	}
 	err = p.sendMessage(&b)
 	if err != nil {
 		p.buffer.PushBack(b)
+		return errors.New("Error sending message, queued for retry")
 	}
 	return nil
 }
 
-func (p *Producer) encode(query url.Values) (error, []byte) {
+func (p *Producer) encode(query url.Values) ([]byte, error) {
 	var b []byte
 	enc := codec.NewEncoderBytes(&b, &p.mh)
 	err := enc.Encode(query)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, b
+	return b, nil
 }

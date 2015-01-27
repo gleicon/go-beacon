@@ -32,7 +32,7 @@ type configFile struct {
 	} `toml:"https_server"`
 
 	Backend struct {
-		BackendUrl    string `toml:"backend_url"`
+		BackendURL    string `toml:"backend_url"`
 		FlushInterval int    `toml:"flush_interval"`
 	} `toml:"backend"`
 }

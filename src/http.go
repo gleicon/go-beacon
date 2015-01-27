@@ -88,9 +88,9 @@ func httpLogger(r *http.Request, created time.Time, status, bytes int) {
 func logProto(r *http.Request) string {
 	if r.TLS == nil {
 		return "HTTP"
-	} else {
-		return "HTTPS"
 	}
+	return "HTTPS"
+
 }
 
 func logMsg(r *http.Request) string {

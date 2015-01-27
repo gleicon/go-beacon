@@ -19,11 +19,11 @@ import (
 	"github.com/fiorix/go-redis/redis"
 )
 
+/* app version and name */
 var (
 	VERSION = "tip"
 	APPNAME = "go-beacon"
 
-	// Templates
 	HTML *html.Template
 	TEXT *text.Template
 
@@ -68,7 +68,7 @@ func main() {
 	}
 	log.Printf("%s %s (%s)", APPNAME, VERSION, cpuinfo)
 	// Start producer
-	producer = newProducer(config.Backend.BackendUrl, config.Backend.FlushInterval)
+	producer = newProducer(config.Backend.BackendURL, config.Backend.FlushInterval)
 
 	// Start HTTP server.
 	s := new(httpServer)

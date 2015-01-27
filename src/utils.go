@@ -22,9 +22,8 @@ func remoteIP(r *http.Request) string {
 	}
 	if ip, _, err := net.SplitHostPort(r.RemoteAddr); err != nil {
 		return ip
-	} else {
-		return r.RemoteAddr
 	}
+	return r.RemoteAddr
 }
 
 // serverURL returns the base URL of the server based on the current request.
