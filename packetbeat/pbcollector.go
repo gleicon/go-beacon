@@ -1,13 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/fiorix/go-redis/redis"
 	"github.com/gdamore/mangos"
 	"github.com/gdamore/mangos/protocol/rep"
-	"github.com/gdamore/mangos/transport/all"
+	"github.com/gdamore/mangos/transport/ipc"
+	"github.com/gdamore/mangos/transport/tcp"
 	"github.com/ugorji/go/codec"
-	"net"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -20,8 +22,7 @@ var (
 	b  []byte
 )
 
-func boomerangMetrics(udpAddr *net.UDPAddr, prefix string, d map[string][]string) {
-	fmt.Println("------ server msg ------ ")
+func boomerangMetrics(rc *redis.Client, prefix string, d map[string][]string, pbkey string) {
 	ntDNS, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
 	ntCon, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
 	ntDomcontloaded, _ := delta(d["nt_domcontloaded_st"][0], d["nt_domcontloaded_end"][0]) // domContentLoadedEnd - domContentLoadedStart
@@ -42,19 +43,26 @@ func boomerangMetrics(udpAddr *net.UDPAddr, prefix string, d map[string][]string
 	partial := fmt.Sprintf("%s%s%s", prefix, strings.Replace(url.Host, "/", ".", -1), strings.Replace(url.Path, "/", ".", -1))
 	partial = strings.TrimSuffix(partial, ".")
 
-	fmt.Printf("%s.navigation.type: %s\n", partial, ntNavtype)
-	fmt.Printf("%s.navigation.timing.dns: %d\n", partial, ntDNS)
-	fmt.Printf("%s.navigation.timing.connection: %d\n", partial, ntCon)
-	fmt.Printf("%s.navigation.timing.dom.loaded: %d\n", partial, ntDomcontloaded)
-	fmt.Printf("%s.navigation.timing.dom.processing: %d\n", partial, ntProcessed)
-	fmt.Printf("%s.navigation.timing.request: %d\n", partial, ntRequest)
-	fmt.Printf("%s.navigation.timing.response: %d\n", partial, ntResponse)
-	fmt.Printf("%s.roundtrip: %d\n", partial, roundtrip)
-	fmt.Printf("%s.page: %s\n", partial, page)
-	fmt.Println("------ server msg ------ ")
+	doc := make(map[string]interface{})
+	doc[fmt.Sprintf("%s.navigation.type", partial)] = ntNavtype
+	doc[fmt.Sprintf("%s.navigation.timing.dns", partial)] = ntDNS
+	doc[fmt.Sprintf("%s.navigation.timing.connection", partial)] = ntCon
+	doc[fmt.Sprintf("%s.navigation.timing.dom.loaded", partial)] = ntDomcontloaded
+	doc[fmt.Sprintf("%s.navigation.timing.dom.processing", partial)] = ntProcessed
+	doc[fmt.Sprintf("%s.navigation.timing.request", partial)] = ntRequest
+	doc[fmt.Sprintf("%s.navigation.timing.response", partial)] = ntResponse
+	doc[fmt.Sprintf("%s.roundtrip", partial)] = roundtrip
+	doc[fmt.Sprintf("%s.page", partial)] = page
+
+	jsonDoc, err := json.Marshal(doc)
+	if err != nil {
+		fmt.Println("Error encoding data:", err)
+		return
+	}
+	fmt.Println(rc.RPush(pbkey, string(jsonDoc)))
 }
 
-func jsMetrics(udpAddr *net.UDPAddr, prefix string, d map[string][]string) {
+func jsMetrics(rc *redis.Client, prefix string, d map[string][]string, pbkey string) {
 	fmt.Println("------ server msg ------ ")
 	ntDNS, _ := delta(d["nt_dns_st"][0], d["nt_dns_end"][0])                               // domainLookupEnd - domainLookupStart
 	ntCon, _ := delta(d["nt_con_st"][0], d["nt_con_end"][0])                               // connectEnd - connectStart
@@ -106,23 +114,15 @@ func decode(buf []byte) (map[string][]string, error) {
 	return doc, nil
 }
 
-func listenMangos(listenAddr *string, trackerType *string, udpAddr *net.UDPAddr, prefix *string) {
+func listenMangos(listenAddr *string, trackerType *string, prefix *string, rc *redis.Client, pbkey string) {
 	var err error
-	responseServerReady := make(chan struct{})
-	responseServer, err := rep.NewSocket()
-	defer responseServer.Close()
-	var serverMsg *mangos.Message
+	var responseServer mangos.Socket
+	responseServer, err = rep.NewSocket()
+	responseServer.AddTransport(ipc.NewTransport())
+	responseServer.AddTransport(tcp.NewTransport())
 
 	if err = responseServer.Listen(*listenAddr); err != nil {
 		fmt.Printf("\nServer listen failed: %v", err)
-		return
-	}
-
-	close(responseServerReady)
-
-	all.AddTransports(responseServer)
-	if err != nil {
-		fmt.Println("Error connecting: ", err)
 		return
 	}
 
@@ -130,7 +130,8 @@ func listenMangos(listenAddr *string, trackerType *string, udpAddr *net.UDPAddr,
 	mh.MapType = reflect.TypeOf(map[string][]string(nil))
 	go func() {
 		for {
-			if serverMsg, err = responseServer.RecvMsg(); err != nil {
+			serverMsg, err := responseServer.RecvMsg()
+			if err != nil {
 				fmt.Printf("\nServer receive failed: %v", err)
 			}
 			d, err := decode(serverMsg.Body)
@@ -140,9 +141,9 @@ func listenMangos(listenAddr *string, trackerType *string, udpAddr *net.UDPAddr,
 			}
 			switch *trackerType {
 			case "boomerang":
-				boomerangMetrics(udpAddr, *prefix, d)
+				boomerangMetrics(rc, *prefix, d, pbkey)
 			case "js":
-				jsMetrics(udpAddr, *prefix, d)
+				jsMetrics(rc, *prefix, d, pbkey)
 			}
 
 			serverMsg.Body = []byte("OK")
@@ -155,27 +156,24 @@ func listenMangos(listenAddr *string, trackerType *string, udpAddr *net.UDPAddr,
 }
 
 func main() {
-	// consumer -type boomerang -listen tcp://127.0.0.1:8000 -statsd 192.168.33.20:8125
+	// pbcollector -type boomerang -listen tcp://127.0.0.1:8000 -redis 192.168.33.20:8125
 
 	listenAddr := flag.String("listen", "tcp://127.0.0.1:8000", "Listening string - default: tcp://127.0.0.1:8000")
-	statsdServer := flag.String("statsd", "127.0.0.1:8125", "statsd endpoint - default: 127.0.0.1:8125")
+	redisServer := flag.String("packetbeat", "127.0.0.1:6380", "packet beat redis - default: 127.0.0.1:6380")
 	trackerType := flag.String("tracker", "boomerang", "tracker type - default: boomerang [boomerang, js]")
+	redisPBKey := flag.String("redispbkey", "packetbeat", "packetbeat redis' key - default: packetbeat")
 	prefix := flag.String("prefix", "", "prefix to metrics - default: empty string")
 	flag.Parse()
 
 	fmt.Println("Listening:", *listenAddr)
-	fmt.Println("Statsd endpoint:", *statsdServer)
+	fmt.Println("Redis endpoint:", *redisServer)
 	fmt.Println("Tracker type: ", *trackerType)
 	fmt.Println("Prefix: ", *prefix)
+	fmt.Println("Packetbeat key: ", *redisPBKey)
 	fmt.Println("Consumer ready")
-	udpAddr, err := net.ResolveUDPAddr("udp4", *statsdServer)
+	rc := redis.New(*redisServer)
 
-	if err != nil {
-		fmt.Println("Error resolving statsd server", err)
-		return
-	}
-
-	listenMangos(listenAddr, trackerType, udpAddr, prefix)
+	listenMangos(listenAddr, trackerType, prefix, rc, *redisPBKey)
 
 	// wait for cleanup
 	for {

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bitbucket.org/gdamore/mangos/protocol/req"
-	"bitbucket.org/gdamore/mangos/transport/all"
 	"container/list"
 	"errors"
+	"github.com/gdamore/mangos/protocol/req"
+	"github.com/gdamore/mangos/transport/all"
 	"github.com/ugorji/go/codec"
 	"log"
 	"net/url"
