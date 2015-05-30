@@ -96,7 +96,7 @@ gather_geo_info = function(){
             navigator.geolocation.getCurrentPosition(
                     function(position){ 
                         send_data("g", {"lat": position.coords.latitude, "long": position.coords.longitude}); 
-                    }, function(error){});i
+                    }, function(error){});
         }
     } catch(e){
     }
