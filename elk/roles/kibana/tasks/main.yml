@@ -1,0 +1,33 @@
+- name: download kibana 4.0.1
+  get_url: url=https://download.elasticsearch.org/kibana/kibana/kibana-4.0.1-linux-x64.tar.gz dest=/tmp/kibana-4.0.1-linux-x64.tar.gz
+
+- name: opt directory must exists
+  file:
+    path: /opt/
+    state: directory
+
+- name: untar kibana
+  unarchive: src=/tmp/kibana-4.0.1-linux-x64.tar.gz dest=/opt copy=no
+
+- name: create link
+  file: src=/opt/kibana-4.0.1-linux-x64 dest=/opt/kibana state=link
+
+- name: copy service
+  template: src=kibana4.j2 dest=/etc/init.d/kibana4
+
+- name: fix permission
+  file: path=/etc/init.d/kibana4 state=file mode="u=rwx,g=rx,o=rx"
+
+- name: run service stuff
+  shell: update-rc.d kibana4 defaults 96 9
+
+- name: start kibana4
+  service: name=kibana4 state=restarted
+
+- name: copy nginx configuration for kibana
+  template: src=nginx-kibana.conf.j2 dest=/etc/nginx/sites-available/kibana.conf
+
+- name: enable site
+  file: src=/etc/nginx/sites-available/kibana.conf dest=/etc/nginx/sites-enabled/kibana.conf state=link
+  notify:
+    - restart nginx

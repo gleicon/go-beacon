@@ -1,0 +1,12 @@
+- name: add the debian repo for elastic
+  apt_repository: repo='deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main' state=present
+
+- name: add the key for elastic repository
+  apt_key: url=http://packages.elasticsearch.org/GPG-KEY-elasticsearch state=present
+
+- name: install elasticsearch
+  apt: name=elasticsearch=1.4.4 state=present update_cache=yes
+
+- name: start elasticsearch
+  service: name=elasticsearch state=started
+

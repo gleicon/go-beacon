@@ -1,0 +1,14 @@
+- hosts: all
+  sudo: True
+  vars:
+    - java_versions: oracle-java8-installer
+  roles:
+    - common
+    - java
+    - nginx
+    - elasticsearch
+    - kibana
+  vars_files:
+    - vars/es_defaults.yml
+    - vars/elasticsearch.yml
+    - vars/kibana.yml

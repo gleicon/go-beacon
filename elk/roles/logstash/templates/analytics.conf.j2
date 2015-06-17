@@ -1,0 +1,15 @@
+input {
+  tcp {
+    mode => 'server'
+    port => 8080
+    type => 'analytics'
+    codec => 'json'
+  }
+}
+ 
+output {
+  elasticsearch {
+    host => "localhost"
+    protocol => "http"
+  }
+}
