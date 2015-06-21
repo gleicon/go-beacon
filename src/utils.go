@@ -61,3 +61,33 @@ func serverURL(config *configFile, r *http.Request, preferSSL bool) string {
 	}
 	return fmt.Sprintf("%s://%s", proto, host)
 }
+
+/*
+	IPAddreCheck allows for a list of IP addrs to be checked against, either in string or net.IP form
+*/
+
+type IPAddressCheckList []net.IPNet
+
+func (ai IPAddressCheckList) checkIPAddr(ip net.IP) bool {
+	for _, ipn := range ai {
+		r := ipn.Contains(ip)
+
+		if r {
+			return r
+		}
+	}
+	return false
+}
+
+func (ai IPAddressCheckList) checkStringIPAddr(IPAddr string) bool {
+	ip := net.ParseIP(IPAddr)
+	if ip == nil {
+		return false
+	}
+	return ai.checkIPAddr(ip)
+}
+
+func getURIParameter(exclude string, r *http.Request) string {
+	appname := r.URL.Path[len("/api/v1/requests/"):]
+	return appname
+}

@@ -5,15 +5,55 @@ var original_onbeforeunload = null;
 var tracker = null;
 var host = null;
 
+// From https://developer.mozilla.org/en-US/docs/Web/API/document.cookie
+var docCookies = {
+  getItem: function (sKey) {
+    if (!sKey) { return null; }
+    return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(sKey).replace(/[\-\.\+\*]/g, "\\$&amp;") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
+  },
+  setItem: function (sKey, sValue, vEnd, sPath, sDomain, bSecure) {
+    if (!sKey || /^(?:expires|max\-age|path|domain|secure)$/i.test(sKey)) { return false; }
+    var sExpires = "";
+    if (vEnd) {
+      switch (vEnd.constructor) {
+        case Number:
+          sExpires = vEnd === Infinity ? "; expires=Fri, 31 Dec 9999 23:59:59 GMT" : "; max-age=" + vEnd;
+          break;
+        case String:
+          sExpires = "; expires=" + vEnd;
+          break;
+        case Date:
+          sExpires = "; expires=" + vEnd.toUTCString();
+          break;
+      }
+    }
+    document.cookie = encodeURIComponent(sKey) + "=" + encodeURIComponent(sValue) + sExpires + (sDomain ? "; domain=" + sDomain : "") + (sPath ? "; path=" + sPath : "") + (bSecure ? "; secure" : "");
+    return true;
+  },
+};
+
 if (window.onerror != null) original_onerror = window.onerror;
 if (window.onload != null) original_onload = window.onload;
 if (window.onbeforeunload != null) original_onbeforeunload = window.onbeforeunload
 
-
+cookie_tracking = function() {
+    if (docCookies.getItem("gbtracker")) {
+        return false;
+    }
+    docCookies.setItem("gbtracker", 1, Infinity);
+}
+ 
 
 send_data = function(type, data) {
-    var e = encodeURIComponent;
-    data["host"] = e(window.location.href)
+    data["ref"] = document.referrer;
+    data["lang"] = window.navigator.userLanguage || window.navigator.language;
+    data["screen_width"] = screen.width;
+    data["screen_height"] = screen.height;
+    data["browser_time"] = new Date();
+    // disable cookie tracking by commenting the line below
+    data["new_user"] = cookie_tracking();
+    data["uri"] = window.location.pathname; 
+    data["host"] = encodeURIComponent(window.location.href);
     pars = "";
     for (k in data){
         pars = pars + "&"+k+"="+e(data[k])
@@ -45,6 +85,8 @@ collect_onbeforeunload_time = function(){
                     send_data("u", d)
                 }
             } catch(e){
+		d = {"msg": "tracker exception: " + e.message, "url": window.location.href, "line": e.lineNumber, "file": e.fileName};
+		send_data("e", d);
             }
         if (original_onbeforeunload != null) original_onbeforeunload();
 }
@@ -75,6 +117,8 @@ collect_performance_data = function(){
         }
         send_data("p", d);
     } catch(e){
+    	d = {"msg": "tracker exception: " + e.message, "url": window.location.href, "line": e.lineNumber, "file": e.fileName};
+    	send_data("e", d);
     }
     if (original_onload != null) original_onload();
 }
@@ -99,6 +143,8 @@ gather_geo_info = function(){
                     }, function(error){});
         }
     } catch(e){
+    	d = {"msg": "tracker exception: " + e.message, "url": window.location.href, "line": e.lineNumber, "file": e.fileName};
+    	send_data("e", d);
     }
 }
 
