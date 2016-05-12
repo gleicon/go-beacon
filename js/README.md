@@ -46,18 +46,22 @@ You can disable that by setting to `null` the variable `cookieKey` track.js.
 
 ## Add to your page, at the `<head>` section
 
-    <script type="text/javascript" src="http://location.of.track.js/js/track.js"></script>
-    <script>
-        activate("http://location.of.your.beacon/t.gif", "tracker_name");
-    </script>
+```html
+<script type="text/javascript" src="http://location.of.track.js/js/track.js"></script>
+<script>
+    activate("http://location.of.your.beacon/t.gif", "tracker_name");
+</script>
+```
 
 ## Tracking from inside a iframe sandbox
 
 You can choose to add the script inside a iframe sandbox to prevent any blocking and javascript errors from affecting your page. For that you may add the following iframe snippet inside the pages your're tracking:
 
-    <iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-            src="http://location.of.track.html/track.html"
-            style="border: 0; width:0px; height:0px;"></iframe>
+```html
+<iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+        src="http://location.of.track.html/track.html"
+        style="border: 0; width:0px; height:0px;"></iframe>
+```
 
 This iframe inserts a `track.html` that need to be something like:
 
