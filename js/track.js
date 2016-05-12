@@ -72,7 +72,9 @@ send_data = function(type, data) {
     for (k in data){
         pars = pars + "&" + k + "=" + encodeURIComponent(data[k])
     }
-    (new Image()).src = host + tracker + '/?t=' + encodeURIComponent(type)+ pars;
+    // I don't understand the role of tracker variable :(
+    // (new Image()).src = host + tracker + '/?t=' + encodeURIComponent(type)+ pars;
+    (new Image()).src = host '?t=' + encodeURIComponent(type)+ pars;
 }
 
 collect_onbeforeunload_time = function() {
