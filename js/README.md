@@ -1,14 +1,18 @@
 # Simple tracker based on Navigation Timing API
 
-	A simple js tracker that collects Navigation Timing API, timers and js exceptions. Events are intercepted to collect data and all calculations are made client-side. 
-	It inserts a 1x1px image into the page and have to be loaded at the <head> section.
-	All javascript events are stubbed (i.e. if you already have a function mapped to window.onload it will be called after the tracker
+A simple js tracker that collects Navigation Timing API, timers and js exceptions. Events are intercepted to collect data and all calculations are made client-side.
+
+It inserts a 1x1px image into the page and have to be loaded at the <head> section.
+
+All javascript events are stubbed (i.e. if you already have a function mapped to window.onload it will be called after the tracker
 
 ## Why not boomerang.js
 
-	Boomerang is pretty good and you should probably be using it. 
-	This code was made to work with modern browsers and collect specific metrics without plugins or build stage.
-	It's also smaller than a regular boomerang build.
+Boomerang is pretty good and you should probably be using it. 
+
+This code was made to work with modern browsers and collect specific metrics without plugins or build stage.
+
+It's also smaller than a regular boomerang build.
 
 ## Query string and parameters
 
