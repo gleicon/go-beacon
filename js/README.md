@@ -40,7 +40,9 @@ All requests bundle the followind data:
 
 ## Cookies
 
-Cookies are used for marking returning user. Code is based on mozilla code (https://developer.mozilla.org/en-US/docs/Web/API/document/cookie). You can disable that by commenting the code for cookie_tracking at track.js.
+Cookies are used for marking returning user. Code is based on mozilla code (https://developer.mozilla.org/en-US/docs/Web/API/document/cookie).
+
+You can disable that by setting to `null` the variable `cookieKey` track.js.
 
 ## Add to your page, at the `<head>` section
 
