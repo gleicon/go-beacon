@@ -2,7 +2,7 @@
 
 A simple js tracker that collects Navigation Timing API, timers and js exceptions. Events are intercepted to collect data and all calculations are made client-side.
 
-It inserts a 1x1px image into the page and have to be loaded at the <head> section.
+It inserts a 1x1px image into the page and have to be loaded at the `<head>` section.
 
 All javascript events are stubbed (i.e. if you already have a function mapped to window.onload it will be called after the tracker
 
@@ -42,7 +42,7 @@ All requests bundle the followind data:
 
 Cookies are used for marking returning user. Code is based on mozilla code (https://developer.mozilla.org/en-US/docs/Web/API/document/cookie). You can disable that by commenting the code for cookie_tracking at track.js.
 
-## Add to your page, at the <head> section
+## Add to your page, at the `<head>` section
 
     <script type="text/javascript" src="http://location.of.track.js/js/track.js"></script>
     <script>
