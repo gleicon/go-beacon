@@ -4,6 +4,7 @@ var original_onerror = null;
 var original_onbeforeunload = null;
 var tracker = null;
 var host = null;
+var cookieKey = "gbtracker"; // set to null to disable returning user tracking
 
 // From https://developer.mozilla.org/en-US/docs/Web/API/document.cookie
 var docCookies = {
@@ -36,11 +37,23 @@ if (window.onerror != null) original_onerror = window.onerror;
 if (window.onload != null) original_onload = window.onload;
 if (window.onbeforeunload != null) original_onbeforeunload = window.onbeforeunload
 
+// Modified from: http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+generateUUID = function() {
+    var d = start;
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+}
+
 cookie_tracking = function() {
-    if (docCookies.getItem("gbtracker")) {
+    if (docCookies.getItem(cookieKey)) {
         return false;
     }
-    return docCookies.setItem("gbtracker", 1, Infinity);
+    docCookies.setItem(cookieKey, generateUUID(), Infinity);
+    return true;
 }
 
 send_data = function(type, data) {
@@ -49,8 +62,10 @@ send_data = function(type, data) {
     data["screen_width"] = screen.width;
     data["screen_height"] = screen.height;
     data["browser_time"] = new Date();
-    // disable cookie tracking by commenting the line below
-    data["new_user"] = cookie_tracking();
+    if (cookieKey != null) {
+        data["new_user"] = cookie_tracking();
+        data["user_id"] = docCookies.getItem(cookieKey);
+    }
     data["uri"] = window.location.pathname;
     data["host"] = window.location.href;
     pars = "";
