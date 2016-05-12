@@ -2,7 +2,7 @@
 
 A simple js tracker that collects Navigation Timing API, timers and js exceptions. Events are intercepted to collect data and all calculations are made client-side.
 
-It inserts a 1x1px image into the page and have to be loaded at the `<head>` section.
+It inserts a 1x1px image into the page and have to be loaded at the `<head>` section or inside a iframe sandbox.
 
 All javascript events are stubbed (i.e. if you already have a function mapped to window.onload it will be called after the tracker
 
@@ -51,5 +51,24 @@ You can disable that by setting to `null` the variable `cookieKey` track.js.
         activate("http://location.of.your.beacon/t.gif", "tracker_name");
     </script>
 
+## Tracking from inside a iframe sandbox
 
+You can choose to add the script inside a iframe sandbox to prevent any blocking and javascript errors from affecting your page. For that you may add the following iframe snippet inside the pages your're tracking:
 
+    <iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            src="http://location.of.track.html/track.html"
+            style="border: 0; width:0px; height:0px;"></iframe>
+
+This iframe inserts a `track.html` that need to be something like:
+
+```html
+<html>
+  <head>
+    <script type="text/javascript" src="http://location.of.track.js/js/track.js"></script>
+    <script>
+        activate("http://location.of.your.beacon/t.gif", "tracker_name", true);
+    </script>
+  </head>
+  <body></body>
+</html>
+```

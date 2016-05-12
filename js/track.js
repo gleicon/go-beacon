@@ -5,6 +5,7 @@ var original_onbeforeunload = null;
 var tracker = null;
 var host = null;
 var cookieKey = "gbtracker"; // set to null to disable returning user tracking
+var thewindow = window;
 
 // From https://developer.mozilla.org/en-US/docs/Web/API/document.cookie
 var docCookies = {
@@ -33,10 +34,6 @@ var docCookies = {
     },
 };
 
-if (window.onerror != null) original_onerror = window.onerror;
-if (window.onload != null) original_onload = window.onload;
-if (window.onbeforeunload != null) original_onbeforeunload = window.onbeforeunload
-
 // Modified from: http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
 generateUUID = function() {
     var d = start;
@@ -57,7 +54,7 @@ cookie_tracking = function() {
 }
 
 send_data = function(type, data) {
-    data["ref"] = document.referrer;
+    data["ref"] = thewindow.document.referrer;
     data["lang"] = window.navigator.userLanguage || window.navigator.language;
     data["screen_width"] = screen.width;
     data["screen_height"] = screen.height;
@@ -66,8 +63,8 @@ send_data = function(type, data) {
         data["new_user"] = cookie_tracking();
         data["user_id"] = docCookies.getItem(cookieKey);
     }
-    data["uri"] = window.location.pathname;
-    data["host"] = window.location.href;
+    data["uri"] = thewindow.location.pathname;
+    data["host"] = thewindow.location.href;
     pars = "";
     for (k in data){
         pars = pars + "&" + k + "=" + encodeURIComponent(data[k])
@@ -84,8 +81,8 @@ collect_onbeforeunload_time = function() {
     d["start"] = start;
     d["total_elapsed_time"] = now - start;
     try {
-        if (performance != null) {
-            n = performance.navigation;
+        if (thewindow.performance != null) {
+            n = thewindow.performance.navigation;
             switch(n.type){
             case n.TYPE_RELOAD:
                 d["type_navigate"] = "reload";
@@ -101,7 +98,7 @@ collect_onbeforeunload_time = function() {
             send_data("u", d);
         }
     } catch(e) {
-        d = {"msg": "tracker exception: " + e.message, "url": window.location.href, "line": e.lineNumber, "file": e.fileName};
+        d = {"msg": "tracker exception: " + e.message, "url": thewindow.location.href, "line": e.lineNumber, "file": e.fileName};
         send_data("e", d);
     }
     if (original_onbeforeunload != null) original_onbeforeunload();
@@ -133,7 +130,7 @@ collect_performance_data = function() {
         }
         send_data("p", d);
     } catch(e) {
-    	  d = {"msg": "tracker exception: " + e.message, "url": window.location.href, "line": e.lineNumber, "file": e.fileName};
+    	  d = {"msg": "tracker exception: " + e.message, "url": thewindow.location.href, "line": e.lineNumber, "file": e.fileName};
     	  send_data("e", d);
     }
     if (original_onload != null) original_onload();
@@ -160,17 +157,27 @@ gather_geo_info = function() {
                 }, function(error) {});
         }
     } catch(e) {
-    	  d = {"msg": "tracker exception: " + e.message, "url": window.location.href, "line": e.lineNumber, "file": e.fileName};
+    	  d = {"msg": "tracker exception: " + e.message, "url": thewindow.location.href, "line": e.lineNumber, "file": e.fileName};
     	  send_data("e", d);
     }
 }
 
-activate = function(h, id) {
+activate = function(h, id, sandbox) {
+    if (sandbox) {
+        thewindow = window.top;
+    } else {
+        thewindow = window;
+    }
     host = h;
     tracker = id;
     geo = false;
-    window.onload = lazy_collect
-    window.onerror = collect_errors;
-    window.onbeforeunload = collect_onbeforeunload_time;
+
+    if (thewindow.onerror != null) original_onerror = thewindow.onerror;
+    if (thewindow.onload != null) original_onload = thewindow.onload;
+    if (thewindow.onbeforeunload != null) original_onbeforeunload = thewindow.onbeforeunload
+
+    thewindow.onload = lazy_collect
+    thewindow.onerror = collect_errors;
+    thewindow.onbeforeunload = collect_onbeforeunload_time;
     if (geo == true) { gather_geo_info(); }
 }
